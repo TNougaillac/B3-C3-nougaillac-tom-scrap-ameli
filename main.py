@@ -1,5 +1,4 @@
-from wsgiref import headers
-
+import pandas as pd
 import requests
 from bs4 import BeautifulSoup
 from setuptools.unicode_utils import decompose
@@ -24,17 +23,20 @@ post = req.post(url, params=params, headers=header)
 
 soup = BeautifulSoup(post.text, "html.parser")
 
-doctors = soup.find_all('div', class_='item-professionnel')
+if page.status_code == 200:
+    lienrecherche = page.url
+
+doctors = soup.findAll('div', class_='item-professionnel')
 doctor_infos = []
 
 for doctor in doctors[:50]:
-    name = doctor.find("div", class_='nom-pictos').text.strip()
+    name = doctor.find("div", class_='nom_pictos').text.strip()
     if doctor.find('div', class_='tel'):
         phone = doctor.find('div', class_='tel').text.strip()
     else:
         phone = "No phone"
 
-    adresse = soup.find('div', class_='adresse')
-    doctor_infos.append({"name": name, "phone": phone, "adresse": adresse})
-
-print(doctor_infos)
+    adresse = soup.find('div', class_='adresse').text.strip()
+    doctor_infos.append({"name": name, "tel": phone, "adresse": adresse})
+    csv = pd.DataFrame(doctor_infos)
+    csv.to_csv("doctors.csv", index=False)
