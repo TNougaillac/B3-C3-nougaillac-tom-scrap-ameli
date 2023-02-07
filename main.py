@@ -2,6 +2,7 @@ from wsgiref import headers
 
 import requests
 from bs4 import BeautifulSoup
+from setuptools.unicode_utils import decompose
 
 url = "http://annuairesante.ameli.fr/recherche.html"
 header = {
@@ -11,19 +12,29 @@ header = {
 req = requests.Session()
 
 params = {
-        'type': 'ps',
-        'ps_profession': '34',
-        'ps_profession_label': 'Médecin généraliste',
-        'ps_localisation': 'HERAULT (34)',
-        'localisation_category': 'departements',
+    'type': 'ps',
+    'ps_profession': '34',
+    'ps_profession_label': 'Médecin généraliste',
+    'ps_localisation': 'HERAULT (34)',
+    'localisation_category': 'departements',
 }
 
 page = req.get(url)
 post = req.post(url, params=params, headers=header)
 
-content = post.content
-soup = BeautifulSoup(post.content, "html.parser")
+soup = BeautifulSoup(post.text, "html.parser")
 
-# resultlinks_to_parse = get_text_link(soup)
+doctors = soup.find_all('div', class_='item-professionnel')
+doctor_infos = []
 
-print(soup)
+for doctor in doctors[:50]:
+    name = doctor.find("div", class_='nom-pictos').text.strip()
+    if doctor.find('div', class_='tel'):
+        phone = doctor.find('div', class_='tel').text.strip()
+    else:
+        phone = "No phone"
+
+    adresse = soup.find('div', class_='adresse')
+    doctor_infos.append({"name": name, "phone": phone, "adresse": adresse})
+
+print(doctor_infos)
